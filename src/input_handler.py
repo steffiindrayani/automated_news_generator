@@ -6,8 +6,10 @@ Created on Sun Feb 11 19:59:51 2018
 """
 
 import MySQLdb
+import json
 
 dbname = "automated_news_generator"
+summarizationConfig = "../data/summarizationconfigforpilkada"
 
 def connectDB(dbName):
     host = "localhost"
@@ -34,11 +36,51 @@ def dataRetrieval(query):
             data['event_type'] = row[6]
             data['event'] = row[7]
             contents.append(data)
-            print(data)
     except:
         print("Error: unable to fetch data")
     db.close()
     return contents
+    
+def readQuery():
+    print("Pembangkit Berita Pemilihan Kepala Daerah di Indonesia")
+    tahun = input("Tahun: ")
+    fokus = input("Fokus (Pemilih/Partai/Pasangan Calon): ")
+    tingkat = input("Tingkat (Walikota/Bupati/Gubernur/Presiden): ")
+    daerah = input("Nama Daerah: ")
+    calon = input("Pasangan Calon: ")
+    lokasi = input("Lokasi Pencoblosan: ")
+    value_type = input("Informasi: ")
+    event = "Pemilihan " + tingkat + " " + daerah + " " + tahun
+
+    request = dict()
+    loc = ""
+    if lokasi != "":
+        loc = lokasi
+    else:
+        loc = daerah
+    request["loc"] = loc
+    request["event"] = event
+    request["fokus"] = fokus
+    request["daerah"] = daerah
+    request["calon"] = calon
+    request["lokasi"] = lokasi
+    request["value_type"] = value_type
+
+    query = "SELECT * FROM input_data WHERE event = '%s'" % (event)
+    if calon != "":
+        query += " AND (entity='%s' OR entity ='pemilih')" % (calon)
+    
+
+    query += " AND (location='%s'" % (loc)
+    query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (loc)
+    
+    query += " ORDER BY value_type, value desc"
+    return query, request
+    
+def getSummarizationRule():
+    rules = json.load(open(summarizationConfig))
+    return rules
+
     
 def templateRetrieval(data):
     entity_type = data['entity_type'].lower()
@@ -68,18 +110,6 @@ def templateUpdateNumberofSelection(idtemp):
         db.rollback()
     db.close()    
 
-def readQuery():
-    print("Pembangkit Berita Pemilihan Kepala Daerah di Indonesia")
-    tahun = input("Tahun: ")
-    tingkat = input("Tingkat (Walikota/Bupati/Gubernur/Presiden): ")
-    daerah = input("Nama Daerah: ")
-    calon = input("Pasangan Calon: ")
-    lokasi = input("Lokasi Pencoblosan: ")
+
     
-    event = "Pemilihan " + tingkat + " " + daerah + " " + tahun
-    query = "SELECT * FROM input_data WHERE event = '%s'" % (event)
-    if calon != "":
-        query += " AND entity='%s'" % (calon)
-    if lokasi != "":
-        query += " AND location='%s'" % (lokasi)
-    return query
+

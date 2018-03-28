@@ -7,8 +7,10 @@ Created on Tue Feb  6 15:42:21 2018
 
 from document_planning import contentDetermination
 from input_handler import readQuery
-from microplanning import lexicalisation
+#from microplanning import lexicalisation
 
-query = readQuery()
-contents = contentDetermination(query)
-lexicalisation(contents)
+query, request = readQuery()
+contents = contentDetermination(query, request)
+
+
+#lexicalisation(contents)

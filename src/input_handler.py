@@ -9,7 +9,7 @@ import MySQLdb
 import json
 
 dbname = "automated_news_generator"
-summarizationConfig = "../data/summarizationconfigforpilkada"
+
 
 def connectDB(dbName):
     host = "localhost"
@@ -74,14 +74,13 @@ def readQuery():
     query += " AND (location='%s'" % (loc)
     query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (loc)
     
-    query += " ORDER BY value_type, value desc"
+    query += " ORDER BY location, value desc"
     return query, request
     
-def getSummarizationRule():
-    rules = json.load(open(summarizationConfig))
-    return rules
+def readJsonFile(filename):
+    data = json.load(open(filename))
+    return data
 
-    
 def templateRetrieval(data):
     entity_type = data['entity_type'].lower()
     value_type = data['value_type'].lower()

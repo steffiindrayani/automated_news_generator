@@ -5,18 +5,41 @@ Created on Sun Feb 11 20:02:53 2018
 @author: Steffi Indrayani
 """
 
-from input_handler import dataRetrieval, getSummarizationRule
+from input_handler import dataRetrieval, readJsonFile
 import re 
+import collections
+from collections import OrderedDict
+from operator import itemgetter
+
+summarizationConfig = "../data/summarizationconfigforpilkada"
+value_type_groups = "../data/value_type_groups.json"
+
+def documentPlanning(query, request):
+    print("determining content...")
+    contents = contentDetermination(query, request)
+    print("structuring document...")
+    documentPlan = documentStructuring(contents, request)
+    return documentPlan
 
 def contentDetermination(query,request):
     #Retrieve data based on query
     contents = dataRetrieval(query)
     derivedContents = generateDerivedContents(request)
     contents.extend(derivedContents)
-    print(contents)
+    if request["calon"] == "":
+        contents = dataRankSummarization(contents)
+    return contents
+    
+def documentStructuring(contents, request):
+    structuredContents = orderContentByEntityType(contents,request["fokus"])
+    structuredContents = orderContentByLocationType(structuredContents)
+    structuredContents = orderContentByValueTypeGroup(structuredContents)  
+    structuredContents = orderContentByLocation(structuredContents)
+    structuredContents = sortContentByRank(structuredContents)  
+    return structuredContents
     
 def generateDerivedContents(request):
-    rules = getSummarizationRule()
+    rules = readJsonFile(summarizationConfig)
     derivedContents = []
     for rule in rules:
         query = generateSummarizationQuery(rule,request)
@@ -25,7 +48,23 @@ def generateDerivedContents(request):
             content["value_type"] = rule["new_value_type"]
         derivedContents.extend(contents)
     return derivedContents
-
+    
+def dataRankSummarization(contents):
+    value_types = ["Persentase Suara", "Jumlah Suara"]
+    for value_type in value_types:
+        content = [item for item in contents if item["value_type"] == value_type]
+        contents = [item for item in contents if item not in content]
+        location = ""
+        for item in content:
+            if item["location"] != location:
+                location = item["location"]
+                rank = 1
+            else:
+                rank +=1
+            item["rank"] = rank
+        contents.extend(content)
+    return contents
+            
 def generateSummarizationQuery(rule, request):
         #new_value_type = rule["new_value_type"]
         operation = re.split("([+-/*])", rule["operation"])
@@ -49,4 +88,63 @@ def generateSummarizationQuery(rule, request):
                 query += " AND table" + str(idx - 1) + ".location = table" + str(idx) + ".location"
         query += " ORDER BY location, value desc"
         return query
+
+def orderContentByEntityType(contents, focus):
+    result = collections.defaultdict(list)
+    for content in contents:
+        result[content['entity_type']].append(content)
+    if focus != "":
+        result = OrderedDict(sorted(result.items(), key=lambda key:(key!=focus, key)))
+    return result.values()
+    
+def orderContentByLocationType(contentsList):
+    results = []
+    for contents in contentsList:
+        result = collections.defaultdict(list)        
+        for content in contents:
+            result[content['location_type']].append(content)
+
+        location_type = ['Negara', 'Provinsi', 'Kabupaten', 'Kota', 'Kecamatan', 'Kelurahan', 'Kelurahan']
+        index_map = {v: i for i, v in enumerate(location_type)}
+        result = OrderedDict(sorted(result.items(), key=lambda pair: index_map[pair[0]]))
+        results.extend(result.values())
+    return results
+    
+def orderContentByValueTypeGroup(contentsList):
+    groups = readJsonFile(value_type_groups)
+    results = []
+    for contents in contentsList:
+        result = collections.defaultdict(list)
+        result1 = collections.defaultdict(list)
+        for content in contents:
+            result[content['value_type']].append(content)
+        computed_key = []
+        for key in result:
+            if key not in computed_key:
+                computed_key.append(key)
+                result1[key].extend(result[key])
+                value_types = [v for k, v in groups.items() if key in v][0]
+                for t in value_types:
+                    if t not in computed_key and t in result:
+                        result1[key].extend(result[t])
+                        computed_key.append(t)
+        results.extend(result1.values())
+    return results
             
+def orderContentByLocation(contentsList):
+    results = []
+    for contents in contentsList:
+        result = collections.defaultdict(list)        
+        for content in contents:
+            result[content['location']].append(content)
+        results.extend(result.values())
+    return results
+    
+    
+def sortContentByRank(contentsList):
+    results = []
+    for contents in contentsList:
+        if "rank" in contents[0]:
+            contents = sorted(contents, key=itemgetter('rank'))
+        results.append(contents)
+    return results

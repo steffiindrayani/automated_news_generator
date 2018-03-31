@@ -81,23 +81,26 @@ def readJsonFile(filename):
     data = json.load(open(filename))
     return data
 
-def templateRetrieval(data):
-    entity_type = data['entity_type'].lower()
-    value_type = data['value_type'].lower()
-    query = """SELECT id,template FROM template WHERE entity_type='%s' AND value_type='%s' ORDER BY number_of_selection LIMIT 1""" % (entity_type, value_type)
+def templateRetrieval(query):
     db, cursor = connectDB(dbname)
-    sentence = ""
+    template = ""
+    couple = 0
+    id_template = 0
     try:
         cursor.execute(query)
         results = cursor.fetchall()        
         for row in results:
             id_template = row[0]
-            sentence = row[1]
+            template = row[1]
+            if row[2] is None:
+                couple = 0
+            else:
+                couple = row[2]
         templateUpdateNumberofSelection(id_template)
     except:
         print("Error: unable to fetch data")
     db.close()
-    return sentence
+    return id_template, template, couple
     
 def templateUpdateNumberofSelection(idtemp):
     db, cursor = connectDB(dbname)

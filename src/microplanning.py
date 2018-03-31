@@ -12,6 +12,8 @@ def microplanning(documentPlan, request):
     lexicalisation(documentPlan, request)
     print("aggregating...")
     aggregation(documentPlan)
+    print("assigning REG..")
+    assignREG(documentPlan)
     print(documentPlan)
     
 def lexicalisation(documentPlan, request):
@@ -28,6 +30,12 @@ def lexicalisation(documentPlan, request):
 #        sentence = sentence.replace("{{event}}", data['event'])
 #        print("sentence: ", sentence)
 #        print(" ")
+
+def assignREG(documentPlan):
+    for contents in documentPlan:
+        for i in range (0, len(contents) - 1):
+            if (contents[i]["entity"] == contents[i+1]["entity"]):
+                contents[i+1]["REG"] = "True"
 
 def aggregation(documentPlan):
     for contents in documentPlan:
@@ -76,9 +84,7 @@ def getAggregationTemplate(data1, data2):
     query = "SELECT value_type1, template FROM aggregation_template WHERE (id1 = %d AND id2 = %d) OR (id1 = %d AND id2 = %d)" % (id1, id2, id2, id1)
     value_type, template = aggregationTemplateRetrieval(query)
     if value_type == data1["value_type"].lower():
-        print("here", value_type, data1["value_type"].lower())
         template = template.replace("{{value1}}", "{{value}}")
     else:
-        print("there", value_type, data1["value_type"].lower())
         template = template.replace("{{value2}}", "{{value}}")
     return str(id1) + ", " + str(id2), template

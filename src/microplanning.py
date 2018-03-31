@@ -5,11 +5,13 @@ Created on Sun Feb 11 20:04:27 2018
 @author: Steffi Indrayani
 """
 
-from input_handler import templateRetrieval
+from input_handler import templateRetrieval, aggregationTemplateRetrieval
 
 def microplanning(documentPlan, request):
     print("lexicalising...")
     lexicalisation(documentPlan, request)
+    print("aggregating...")
+    aggregation(documentPlan)
     print(documentPlan)
     
 def lexicalisation(documentPlan, request):
@@ -19,7 +21,6 @@ def lexicalisation(documentPlan, request):
             id_template, template, couple = getTemplate(data, request["lokasi"], couple)
             data["id_template"] = id_template
             data["template"] = template
-
 #        sentence = template.replace("{{entity}}", data['entity'])
 #        sentence = sentence.replace("{{location}}", data['location'])
 #        sentence = sentence.replace("{{location_type}}", data['location_type'])
@@ -28,6 +29,17 @@ def lexicalisation(documentPlan, request):
 #        print("sentence: ", sentence)
 #        print(" ")
 
+def aggregation(documentPlan):
+    for contents in documentPlan:
+        for i in range (0, len(contents) - 1):
+            if contents[i]["id_template"] != 0:
+                idtemp, template = getAggregationTemplate(contents[i],contents[i+1])
+                if template != "":
+                    contents[i]["id_template"] = idtemp
+                    contents[i]["template"] = template
+                    contents[i+1]["id_template"] = 0
+                    contents[i+1]["template"] = ""
+                
 def getTemplate(data, lokasi, id_couple):
     entity_type = data['entity_type'].lower()
     value_type = data['value_type'].lower()
@@ -57,4 +69,16 @@ def getTemplate(data, lokasi, id_couple):
         id_template, template, couple = templateRetrieval(query)
    
     return id_template, template, couple
-    
+   
+def getAggregationTemplate(data1, data2):
+    id1 = data1["id_template"]
+    id2 = data2["id_template"]
+    query = "SELECT value_type1, template FROM aggregation_template WHERE (id1 = %d AND id2 = %d) OR (id1 = %d AND id2 = %d)" % (id1, id2, id2, id1)
+    value_type, template = aggregationTemplateRetrieval(query)
+    if value_type == data1["value_type"].lower():
+        print("here", value_type, data1["value_type"].lower())
+        template = template.replace("{{value1}}", "{{value}}")
+    else:
+        print("there", value_type, data1["value_type"].lower())
+        template = template.replace("{{value2}}", "{{value}}")
+    return str(id1) + ", " + str(id2), template

@@ -112,6 +112,20 @@ def templateUpdateNumberofSelection(idtemp):
         db.rollback()
     db.close()    
 
+def aggregationTemplateRetrieval(query):
+    db, cursor = connectDB(dbname)
+    template = ""
+    value_type1 = ""
+    try:
+        cursor.execute(query)
+        results = cursor.fetchall()        
+        for row in results:
+            value_type1 = row[0]
+            template = row[1]
+    except:
+        print("Error: unable to fetch data")
+    db.close()
+    return value_type1, template
 
     
 

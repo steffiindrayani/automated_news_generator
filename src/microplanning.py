@@ -14,7 +14,7 @@ def microplanning(documentPlan, request):
     aggregation(documentPlan)
     print("assigning REG..")
     assignREG(documentPlan)
-    print(documentPlan)
+    return documentPlan
     
 def lexicalisation(documentPlan, request):
     for contents in documentPlan:

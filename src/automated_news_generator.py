@@ -8,11 +8,13 @@ Created on Tue Feb  6 15:42:21 2018
 from document_planning import documentPlanning
 from microplanning import microplanning
 from input_handler import readQuery
+from realisation import realisation
 #from microplanning import lexicalisation
 
 query, request = readQuery()
 documentPlan = documentPlanning(query, request)
-microplanning(documentPlan, request)
+textSpecification = microplanning(documentPlan, request)
+realisation(textSpecification)
 
 
 #lexicalisation(contents)

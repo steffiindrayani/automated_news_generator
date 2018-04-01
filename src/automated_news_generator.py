@@ -9,12 +9,21 @@ from document_planning import documentPlanning
 from microplanning import microplanning
 from input_handler import readQuery
 from realisation import realisation
+from datetime import datetime
 #from microplanning import lexicalisation
 
 query, request = readQuery()
 documentPlan = documentPlanning(query, request)
 textSpecification = microplanning(documentPlan, request)
-realisation(textSpecification)
+article = realisation(textSpecification)
 
+city = "Bandung"
+time = datetime.now().strftime('%Y-%m-%d,%H:%M:%S')
 
-#lexicalisation(contents)
+filename = "../results/article.txt" 
+
+f = open(filename,'w')
+f.write(time)
+f.write("\n\n")
+f.write(city + " - " + article)
+f.close()

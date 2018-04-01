@@ -127,5 +127,32 @@ def aggregationTemplateRetrieval(query):
     db.close()
     return value_type1, template
 
+def entityFactRetrieval(query):
+    db, cursor = connectDB(dbname)
+    entity_type = ""
+    value_type = ""
+    value = ""
+    try:
+        cursor.execute(query)
+        results = cursor.fetchall()        
+        for row in results:
+            idfact = row[0]
+            entity_type = row[1]
+            value_type = row[2]
+            value = row[3]
+        factUpdateNumberofSelection(idfact)
+    except:
+        return ""
+    db.close()
+    return entity_type + " dengan " + value_type + " " + value   
     
+def factUpdateNumberofSelection(idfact):
+    db, cursor = connectDB(dbname)
+    query = "UPDATE entity_fact SET number_of_selection = number_of_selection + 1 WHERE id = '%d'" % (idfact)
+    try:
+        cursor.execute(query)
+        db.commit()
+    except:
+        db.rollback()
+    db.close()    
 

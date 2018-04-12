@@ -8,6 +8,7 @@ Created on Sun Feb 11 20:02:53 2018
 from input_handler import dataRetrieval, readJsonFile
 import re 
 import collections
+import operator
 from collections import OrderedDict
 from operator import itemgetter
 
@@ -42,11 +43,12 @@ def generateDerivedContents(request):
     rules = readJsonFile(summarizationConfig)
     derivedContents = []
     for rule in rules:
-        query = generateSummarizationQuery(rule,request)
-        contents = dataRetrieval(query)
-        for content in contents:
-            content["value_type"] = rule["new_value_type"]
-        derivedContents.extend(contents)
+        if (rule["entity_type"] == request["fokus"] or request["fokus"] == "Pasangan Calon"):
+            query = generateSummarizationQuery(rule,request)
+            contents = dataRetrieval(query)
+            for content in contents:
+                content["value_type"] = rule["new_value_type"]
+            derivedContents.extend(contents)
     return derivedContents
     
 def dataRankSummarization(contents):
@@ -82,7 +84,7 @@ def generateSummarizationQuery(rule, request):
         query += " (table0.location = '{}' OR table0.location IN (SELECT location FROM location WHERE super_location='{}'))".format(request["loc"], request["loc"])
         query += " AND table0.event = '%s'" % (request["event"])
         if (request["calon"] != ""):
-            query += " AND (entity='%s' OR entity ='pemilih')" % (request["calon"])
+            query += " AND (table0.entity='%s' OR table0.entity_type ='pemilih')" % (request["calon"])
         for idx in range(i):
             if idx > 0:
                 query += " AND table" + str(idx - 1) + ".location = table" + str(idx) + ".location"
@@ -94,7 +96,7 @@ def orderContentByEntityType(contents, focus):
     for content in contents:
         result[content['entity_type']].append(content)
     if focus != "":
-        result = OrderedDict(sorted(result.items(), key=lambda key:(key!=focus, key)))
+        result = OrderedDict(sorted(result.items(), key=lambda key:(key!='focus', key)))
     return result.values()
     
 def orderContentByLocationType(contentsList):
@@ -123,21 +125,24 @@ def orderContentByValueTypeGroup(contentsList):
             if key not in computed_key:
                 computed_key.append(key)
                 result1[key].extend(result[key])
-                value_types = [v for k, v in groups.items() if key in v][0]
-                for t in value_types:
-                    if t not in computed_key and t in result:
-                        result1[key].extend(result[t])
-                        computed_key.append(t)
+                value_types = [v for k, v in groups.items() if key in v]
+                if len(value_types) > 0:
+                    for t in value_types[0]:
+                        if t not in computed_key and t in result:
+                            result1[key].extend(result[t])
+                            computed_key.append(t)
         results.extend(result1.values())
     return results
             
 def orderContentByLocation(contentsList):
     results = []
     for contents in contentsList:
-        result = collections.defaultdict(list)        
-        for content in contents:
-            result[content['location']].append(content)
-        results.extend(result.values())
+        #result = collections.defaultdict(list)        
+        #for content in contents:
+            #result[content['location']].append(content)
+        #results.extend(result.values())
+        contents = sorted(contents, key=itemgetter('location'))
+        results.append(contents)
     return results
     
     
@@ -145,6 +150,6 @@ def sortContentByRank(contentsList):
     results = []
     for contents in contentsList:
         if "rank" in contents[0]:
-            contents = sorted(contents, key=itemgetter('rank'))
+            contents = sorted(contents, key=operator.itemgetter('location','rank'))
         results.append(contents)
     return results

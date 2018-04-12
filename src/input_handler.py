@@ -67,9 +67,14 @@ def readQuery():
     request["value_type"] = value_type
 
     query = "SELECT * FROM input_data WHERE event = '%s'" % (event)
+    if fokus != "":
+        if fokus == "Pasangan Calon":
+            query += " AND (entity_type='pemilih' OR entity_type='%s')" % (fokus)
+        else:
+            query += " AND entity_type='%s'" % (fokus)
+        
     if calon != "":
-        query += " AND (entity='%s' OR entity ='pemilih')" % (calon)
-    
+        query += " AND (entity='%s' OR entity_type ='pemilih')" % (calon)        
 
     query += " AND (location='%s'" % (loc)
     query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (loc)
@@ -83,24 +88,26 @@ def readJsonFile(filename):
 
 def templateRetrieval(query):
     db, cursor = connectDB(dbname)
-    template = ""
-    couple = 0
-    id_template = 0
+    template = dict()
     try:
         cursor.execute(query)
         results = cursor.fetchall()        
         for row in results:
-            id_template = row[0]
-            template = row[1]
-            if row[2] is None:
-                couple = 0
+            template["id"] = row[0]
+            template["template"] = row[1]
+            template["entity_type"] = row[2]
+            template["value_type"] = row[3]
+            if row[4] is None:
+                template["couple"] = 0
             else:
-                couple = row[2]
-        templateUpdateNumberofSelection(id_template)
+                template["couple"] = row[4]
+            template["location"] = row[5]
+            template["rank"] = row[6]
+        templateUpdateNumberofSelection(template["id"])
     except:
         print("Error: unable to fetch data")
     db.close()
-    return id_template, template, couple
+    return template
     
 def templateUpdateNumberofSelection(idtemp):
     db, cursor = connectDB(dbname)

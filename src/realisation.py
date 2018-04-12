@@ -35,6 +35,10 @@ def linguisticRealisation(textSpecification):
                 sentence = sentence.replace("{{value}}", generateValue(contents[i]['value']))
 
                 if "REG" in contents[i]:
+                    r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
+                    r2 = re.compile(re.escape("calon"), re.IGNORECASE)
+                    sentence = r1.sub("", sentence)
+                    sentence = r2.sub("", sentence)
                     sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], contents[i]["entity"]))
                 else:
                     sentence = sentence.replace("{{entity}}", contents[i]['entity'].title())        

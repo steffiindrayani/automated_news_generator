@@ -105,7 +105,7 @@ def templateRetrieval(query):
             template["rank"] = row[6]
         templateUpdateNumberofSelection(template["id"])
     except:
-        print("Error: unable to fetch data")
+        print("")
     db.close()
     return template
     

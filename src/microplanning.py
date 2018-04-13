@@ -10,11 +10,10 @@ from input_handler import templateRetrieval, aggregationTemplateRetrieval
 def microplanning(documentPlan, request):
     print("lexicalising...")
     lexicalisation(documentPlan, request)
-    print(documentPlan)
- #   print("aggregating...")
-    #aggregation(documentPlan)
-#    print("assigning REG..")
-#    assignREG(documentPlan)
+    print("aggregating...")
+    aggregation(documentPlan)
+    print("assigning REG..")
+    assignREG(documentPlan)
     return documentPlan
     
 # def lexicalisation(documentPlan, request):
@@ -38,7 +37,8 @@ def lexicalisation(documentPlan, request):
                 template,couple = getTemplate(data, request["lokasi"], couple)
                 data["id_template"] = template["id"]
                 data["template"] = template["template"]
-                template["prevlocation_type"] = data["location_type"]
+                template["prevlocation"] = data["location"]
+                #template["preventity"] = data["entity"]
                 existingTemplates.append(template)
 
                 
@@ -58,6 +58,49 @@ def assignREG(documentPlan):
 #                     contents[i]["template"] = template
 #                     contents[i+1]["id_template"] = 0
 #                     contents[i+1]["template"] = ""
+
+def aggregation(documentPlan):
+    deprecatedContents = []
+    for contents in documentPlan:
+        aggregateUsingTemplate(contents)
+        aggregateSimilarSentences(contents)
+        if not isValidContents(contents):
+            deprecatedContents.append(contents)
+    print(deprecatedContents)
+        
+def aggregateUsingTemplate(contents):
+    for i in range (0, len(contents) - 1):
+        if contents[i]["id_template"] != 0:
+            idtemp, template = getAggregationTemplate(contents[i],contents[i+1])
+            if template != "":
+                contents[i]["id_template"] = idtemp
+                contents[i]["template"] = template
+                contents[i+1]["id_template"] = 0
+                contents[i+1]["template"] = ""
+
+def aggregateSimilarSentences(contents):
+    idx = len(contents) - 1
+    while True:
+        if contents[idx]["id_template"] != 0:
+            break
+        else:
+            idx -= 1
+    aggregated = False
+    for i in range (idx - 1, -1, -1):
+        if contents[i]["id_template"] != 0:
+            if contents[i]["id_template"] == contents[idx]["id_template"]:
+                print("here")
+                #remove tanda titik dan perkecil kata kedua, konjungsi random, cek pernah gak
+                contents[i]["template"] = contents[i]["template"].rstrip('.')
+                contents[i]["aggregated"] = 'True' 
+                if aggregated:
+                    contents[idx]["template"] = ", " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
+                else:
+                    contents[idx]["template"] = ", sedangkan " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
+                aggregated = True
+            else:
+                aggregated = False
+            idx = i
                 
 # def getTemplate(data, lokasi, id_couple):
 #     entity_type = data['entity_type'].lower()
@@ -94,6 +137,7 @@ def getTemplate(data, lokasi, id_couple):
     value_type = data['value_type'].lower()
     location = data['location'].lower()
     template = ""
+    couple = 0
     query = "SELECT id,template, entity_type, value_type, couple, location, rank FROM template WHERE entity_type='%s' AND value_type='%s'" % (entity_type, value_type)
     
     if location == lokasi:
@@ -116,12 +160,13 @@ def getTemplate(data, lokasi, id_couple):
     query += " ORDER BY number_of_selection LIMIT 1"
     if not template:
         template = templateRetrieval(query)
-        couple = template["couple"]
+        if "couple" in template:
+            couple = template["couple"]
     return template, couple
 
 def searchExistingTemplate(data, existingTemplates, couple):
     for template in existingTemplates:
-        if template["value_type"] == data["value_type"].lower() and template["entity_type"] == data["entity_type"].lower() and template["prevlocation_type"] == data["location_type"] and ("rank" not in data or template["rank"] is None or template["rank"] == data["rank"] or (template["rank"] == "2-last" and data["rank"] != 1)):
+        if template["value_type"] == data["value_type"].lower() and template["entity_type"] == data["entity_type"].lower() and template["prevlocation"] == data["location"] and ("rank" not in data or template["rank"] is None or template["rank"] == data["rank"] or (template["rank"] == "2-last" and data["rank"] != 1)):
             return template["id"], template["template"], template["couple"]
     return 0, "", couple
    
@@ -134,4 +179,17 @@ def getAggregationTemplate(data1, data2):
         template = template.replace("{{value1}}", "{{value}}")
     else:
         template = template.replace("{{value2}}", "{{value}}")
-    return str(id1) + ", " + str(id2), template
+    if id1 < id2:
+        return str(id1) + ", " + str(id2), template
+    else:
+        return str(id2) + ", " + str(id1), template
+
+def isValidContents(contents):
+    count = 0
+    for content in contents:
+        if (content["id_template"] and "aggregated" not in content):
+            count += 1
+    if (count >= 2):
+        return True
+    else:
+        return False

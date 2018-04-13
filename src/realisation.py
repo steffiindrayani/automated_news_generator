@@ -43,7 +43,7 @@ def linguisticRealisation(textSpecification):
                 else:
                     sentence = sentence.replace("{{entity}}", contents[i]['entity'].title())        
                 #validation
-                if sentence.endswith(".") == False:
+                if sentence.endswith(".") == False and "aggregated" not in contents[i]:
                     sentence += '.'
                 contents[i]['sentence'] = sentence
 
@@ -54,7 +54,7 @@ def structureRealisation(textSpecification):
     for contents in textSpecification:
         for content in contents:
             if "sentence" in content:
-                article += content["sentence"]
+                article += content["sentence"] + " "
         article += "\n\n"
     return article
                 

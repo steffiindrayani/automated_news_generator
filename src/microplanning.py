@@ -11,7 +11,7 @@ def microplanning(documentPlan, request):
     print("lexicalising...")
     lexicalisation(documentPlan, request)
     print("aggregating...")
-    aggregation(documentPlan)
+    documentPlan = aggregation(documentPlan)
     print("assigning REG..")
     assignREG(documentPlan)
     return documentPlan
@@ -61,12 +61,14 @@ def assignREG(documentPlan):
 
 def aggregation(documentPlan):
     deprecatedContents = []
-    for contents in documentPlan:
-        aggregateUsingTemplate(contents)
-        aggregateSimilarSentences(contents)
-        if not isValidContents(contents):
-            deprecatedContents.append(contents)
-    print(deprecatedContents)
+    for i in range(0, len(documentPlan)):
+        aggregateUsingTemplate(documentPlan[i])
+        aggregateSimilarSentences(documentPlan[i])
+        if not isValidContents(documentPlan[i]):
+            deprecatedContents.append(i)
+    if len(deprecatedContents) > 0:
+        documentPlan = mergeGroups(documentPlan, deprecatedContents)
+    return documentPlan
         
 def aggregateUsingTemplate(contents):
     for i in range (0, len(contents) - 1):
@@ -89,7 +91,6 @@ def aggregateSimilarSentences(contents):
     for i in range (idx - 1, -1, -1):
         if contents[i]["id_template"] != 0:
             if contents[i]["id_template"] == contents[idx]["id_template"]:
-                print("here")
                 #remove tanda titik dan perkecil kata kedua, konjungsi random, cek pernah gak
                 contents[i]["template"] = contents[i]["template"].rstrip('.')
                 contents[i]["aggregated"] = 'True' 
@@ -193,3 +194,32 @@ def isValidContents(contents):
         return True
     else:
         return False
+        
+def mergeGroups(documentPlan, deprecatedContents):
+    deprecatedContents = sorted(deprecatedContents)
+    newGroup = []
+    appendedContents = []
+    for i in deprecatedContents:
+        for j in range(0, len(documentPlan)):
+            if i != j and j not in appendedContents:
+                for content in documentPlan[j]:
+                    if documentPlan[i][0]["entity_type"] == content["entity_type"] and (documentPlan[i][0]["location"] == content["location"] or documentPlan[i][0]["value_type"] == content["value_type"]):
+                        if (i < j):
+                            newGroup.append((i,j))
+                        else:
+                            newGroup.append((j,i))
+                        appendedContents.append(i)
+                        appendedContents.append(j)
+                        break
+    newGroup = dict(sorted(newGroup))
+    appendedContents = []
+    newDocumentPlan = []
+    for i in range(0, len(documentPlan)):
+        if i not in appendedContents:
+            if i in newGroup:
+                newContent = documentPlan[i] + documentPlan[newGroup[i]]
+                appendedContents.append(newGroup[i])
+                newDocumentPlan.append(newContent)
+            else:
+                newDocumentPlan.append(documentPlan[i])
+    return newDocumentPlan

@@ -10,6 +10,7 @@ from microplanning import microplanning
 from input_handler import readQuery
 from realisation import realisation
 from datetime import datetime
+import json
 #from microplanning import lexicalisation
 
 def main():
@@ -20,6 +21,8 @@ def automatedNewsGeneration():
     query, request = readQuery()
     documentPlan = documentPlanning(query, request)
     textSpecification = microplanning(documentPlan, request)
+    with open("../results/blabla", 'w', encoding="utf-8") as outfile:
+        json.dump(textSpecification, outfile, ensure_ascii=False)
     article = realisation(textSpecification)
     return article
     

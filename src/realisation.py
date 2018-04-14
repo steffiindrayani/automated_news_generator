@@ -22,9 +22,9 @@ def linguisticRealisation(textSpecification):
             if (contents[i]["id_template"] != 0):
                 #generation
                 sentence = re.sub(' +',' ', contents[i]["template"])
-                sentence = sentence.replace("{{location_type}}", contents[i]['location_type'].title())
-                sentence = sentence.replace("{{location}}", contents[i]['location'].title())
-                sentence = sentence.replace("{{event}}", contents[i]['event'].title())
+                sentence = sentence.replace("{{location_type}}", contents[i]['location_type'])
+                sentence = sentence.replace("{{location}}", contents[i]['location'])
+                sentence = sentence.replace("{{event}}", contents[i]['event'])
                 
                 if "rank" in contents[i]:
                     sentence = sentence.replace("{{rank}}", "ke-" + str(contents[i]['rank']))
@@ -37,25 +37,28 @@ def linguisticRealisation(textSpecification):
                 if "REG" in contents[i]:
                     r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
                     r2 = re.compile(re.escape("calon"), re.IGNORECASE)
-                    sentence = r1.sub("", sentence)
-                    sentence = r2.sub("", sentence)
+                    r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
+                    sentence = r1.sub('', sentence)
+                    sentence = r2.sub('', sentence)
+                    sentence = r3.sub('', sentence)
                     sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], contents[i]["entity"]))
                 else:
-                    sentence = sentence.replace("{{entity}}", contents[i]['entity'].title())        
+                    sentence = sentence.replace("{{entity}}", contents[i]['entity'])        
                 #validation
                 if sentence.endswith(".") == False and "aggregated" not in contents[i]:
                     sentence += '.'
                 contents[i]['sentence'] = sentence
-
-                
 
 def structureRealisation(textSpecification):
     article = ""
     for contents in textSpecification:
         for content in contents:
             if "sentence" in content:
-                article += content["sentence"] + " "
+                article += content["sentence"]
+            if "aggregated" not in content:
+                article += " "
         article += "\n\n"
+    article = re.sub(' +',' ',article)
     return article
                 
 def generateValue(value):    
@@ -68,7 +71,8 @@ def generateValue(value):
     return str(value)
     
 def generateRE(entity_type, entity):
-    query = "SELECT id, entity_type, value_type, value FROM entity_fact WHERE entity = %s ORDER BY number_of_selection DESC LIMIT 1" % (entity)
+    re = ""
+    query = "SELECT id, entity_type, value_type, value FROM entity_fact WHERE entity = '%s' ORDER BY number_of_selection DESC LIMIT 1" % (entity)
     re = entityFactRetrieval(query)
     if re == "":
         return entity_type + " tersebut"

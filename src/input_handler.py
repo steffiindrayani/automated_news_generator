@@ -42,15 +42,18 @@ def dataRetrieval(query):
     return contents
     
 def readQuery():
+    calon = ""
     print("Pembangkit Berita Pemilihan Kepala Daerah di Indonesia")
     tahun = input("Tahun: ")
     fokus = input("Fokus (Pemilih/Partai/Pasangan Calon): ")
     tingkat = input("Tingkat (Walikota/Bupati/Gubernur/Presiden): ")
     daerah = input("Nama Daerah: ")
-    calon = input("Pasangan Calon: ")
+    putaran = input("Putaran: ")
+    if fokus == "Pasangan Calon":
+        calon = input("Pasangan Calon: ")
     lokasi = input("Lokasi Pencoblosan: ")
     value_type = input("Informasi: ")
-    event = "Pemilihan " + tingkat + " " + daerah + " " + tahun
+    event = "Pemilihan " + tingkat + " " + daerah + " " + tahun + " Putaran " + putaran
 
     request = dict()
     loc = ""
@@ -58,6 +61,7 @@ def readQuery():
         loc = lokasi
     else:
         loc = daerah
+    value_type = [x.strip() for x in value_type.split(',')]
     request["loc"] = loc
     request["event"] = event
     request["fokus"] = fokus
@@ -79,6 +83,12 @@ def readQuery():
     query += " AND (location='%s'" % (loc)
     query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (loc)
     
+    query += " AND ("
+    for i in range(0, len(value_type)):
+        if i != 0:
+            query += " OR"
+        query += " value_type = '%s'" % (value_type[i]) 
+    query += ")"
     query += " ORDER BY location, value desc"
     return query, request
     
@@ -151,6 +161,8 @@ def entityFactRetrieval(query):
     except:
         return ""
     db.close()
+    if value_type == "Alias":
+        return value
     return entity_type + " dengan " + value_type + " " + value   
     
 def factUpdateNumberofSelection(idfact):

@@ -40,7 +40,7 @@ def lexicalisation(documentPlan, request):
                 template["prevlocation"] = data["location"]
                 #template["preventity"] = data["entity"]
                 existingTemplates.append(template)
-
+                
                 
 def assignREG(documentPlan):
     for contents in documentPlan:
@@ -98,6 +98,9 @@ def aggregateSimilarSentences(contents):
                     contents[idx]["template"] = ", " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
                 else:
                     contents[idx]["template"] = ", sedangkan " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
+                if (contents[i]["location"] == contents[idx]["location"]):
+                    contents[idx]["template"] = contents[idx]["template"].replace("di {{location}},", "")
+                    contents[idx]["template"] = contents[idx]["template"].replace("di {{location}}", "")
                 aggregated = True
             else:
                 aggregated = False
@@ -140,8 +143,7 @@ def getTemplate(data, lokasi, id_couple):
     template = ""
     couple = 0
     query = "SELECT id,template, entity_type, value_type, couple, location, rank FROM template WHERE entity_type='%s' AND value_type='%s'" % (entity_type, value_type)
-    
-    if location == lokasi:
+    if location == lokasi.lower():
         query += " AND (location = 'lokasi' OR location IS NULL)"
     else:
         query += " AND location IS NULL"
@@ -167,8 +169,12 @@ def getTemplate(data, lokasi, id_couple):
 
 def searchExistingTemplate(data, existingTemplates, couple):
     for template in existingTemplates:
-        if template["value_type"] == data["value_type"].lower() and template["entity_type"] == data["entity_type"].lower() and template["prevlocation"] == data["location"] and ("rank" not in data or template["rank"] is None or template["rank"] == data["rank"] or (template["rank"] == "2-last" and data["rank"] != 1)):
-            return template["id"], template["template"], template["couple"]
+        if template["value_type"].lower() == data["value_type"].lower() and template["entity_type"].lower() == data["entity_type"].lower() and template["prevlocation"] == data["location"] and ("rank" not in data or template["rank"] is None or template["rank"] == data["rank"]):
+            if couple == 0:
+                couple = template["couple"]
+            else:
+                couple = 0
+            return template["id"], template["template"], couple
     return 0, "", couple
    
 def getAggregationTemplate(data1, data2):
@@ -176,7 +182,7 @@ def getAggregationTemplate(data1, data2):
     id2 = data2["id_template"]
     query = "SELECT value_type1, template FROM aggregation_template WHERE (id1 = %d AND id2 = %d) OR (id1 = %d AND id2 = %d)" % (id1, id2, id2, id1)
     value_type, template = aggregationTemplateRetrieval(query)
-    if value_type == data1["value_type"].lower():
+    if value_type.lower() == data1["value_type"].lower():
         template = template.replace("{{value1}}", "{{value}}")
     else:
         template = template.replace("{{value2}}", "{{value}}")

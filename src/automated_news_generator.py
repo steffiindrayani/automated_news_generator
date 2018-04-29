@@ -20,8 +20,11 @@ def main():
 def automatedNewsGeneration():    
     query, request = readQuery()
     documentPlan = documentPlanning(query, request)
+    if (len(documentPlan) == 0):
+        print("NEWS CAN'T BE GENERATED DUE TO DATA NOT AVAILABLE")
+        return ""
     textSpecification = microplanning(documentPlan, request)
-    with open("../results/blabla", 'w', encoding="utf-8") as outfile:
+    with open("../results/dictionary", 'w', encoding="utf-8") as outfile:
         json.dump(textSpecification, outfile, ensure_ascii=False)
     article = realisation(textSpecification)
     return article

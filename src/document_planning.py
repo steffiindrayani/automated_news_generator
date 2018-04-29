@@ -43,7 +43,7 @@ def generateDerivedContents(request):
     rules = readJsonFile(summarizationConfig)
     derivedContents = []
     for rule in rules:
-        if (rule["entity_type"] == request["fokus"] or request["fokus"] == "Pasangan Calon"):
+        if (rule["new_value_type"] in request["value_type"]):
             query = generateSummarizationQuery(rule,request)
             contents = dataRetrieval(query)
             for content in contents:
@@ -65,6 +65,20 @@ def dataRankSummarization(contents):
                 rank +=1
             item["rank"] = rank
         contents.extend(content)
+    # value_types = ["Persentase Partisipasi Pemilih"]
+    # for value_type in value_types:
+    #     content = [item for item in contents if item["value_type"] == value_type]
+    #     contents = [item for item in contents if item not in content]
+    #     content = sorted(content, key=operator.itemgetter('location_type','value'), reverse=True)
+    #     location_type = ""
+    #     for item in content:
+    #         if item["location_type"] != location_type:
+    #             location_type = item["location_type"]
+    #             rank = 1
+    #         else:
+    #             rank +=1
+    #         item["rank"] = rank
+    #     contents.extend(content)
     return contents
             
 def generateSummarizationQuery(rule, request):
@@ -73,7 +87,7 @@ def generateSummarizationQuery(rule, request):
         operands = operation[0::2]
         operands = [x.lower() for x in operands if not x.isnumeric()]
         #generate query
-        query = "SELECT table0.entity_type, table0.entity, table0.location_type, table0.location, table0.value_type, round(%s,2) as value, table0.event_type, table0.event FROM" % (rule["operation"].lower().replace(" ", ""))
+        query = "SELECT table0.entity_type, table0.entity, table0.location_type, table0.location, table0.value_type, round(%s,0) as value, table0.event_type, table0.event FROM" % (rule["operation"].lower().replace(" ", ""))
         i = 0 
         for operand in operands:
             if i > 0:

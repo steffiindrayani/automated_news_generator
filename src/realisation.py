@@ -17,6 +17,7 @@ def realisation(textSpecification):
     return article
     
 def linguisticRealisation(textSpecification):
+    idx = 0
     for contents in textSpecification:
         for i in range (0, len(contents)):
             if (contents[i]["id_template"] != 0):
@@ -34,7 +35,7 @@ def linguisticRealisation(textSpecification):
                     sentence = sentence.replace("{{value2}}", generateValue(contents[i+1]['value']))
                 sentence = sentence.replace("{{value}}", generateValue(contents[i]['value']))
 
-                if "REG" in contents[i]:
+                if "REG" in contents[i] or idx != 0 or i != 0:
                     r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
                     r2 = re.compile(re.escape("calon"), re.IGNORECASE)
                     r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
@@ -48,7 +49,7 @@ def linguisticRealisation(textSpecification):
                 if sentence.endswith(".") == False and "aggregated" not in contents[i]:
                     sentence += '.'
                 contents[i]['sentence'] = sentence
-
+        idx += 1
 def structureRealisation(textSpecification):
     article = ""
     for contents in textSpecification:
@@ -58,21 +59,23 @@ def structureRealisation(textSpecification):
             if "aggregated" not in content:
                 article += " "
         article += "\n\n"
+    article = re.sub(' ,',',',article)
     article = re.sub(' +',' ',article)
     return article
                 
 def generateValue(value):    
     locale.setlocale(locale.LC_NUMERIC, 'IND')
-    if isinstance(value, float):
-        value = locale.format("%.*f", (2, value), True)
-    elif value.isnumeric():
+    if isinstance(value, float) or value.isnumeric():
         value = int(value)
-        value = locale.format("%.*f", (0, value), True)
+        value = locale.format("%.*f", (0, value), True)     
     return str(value)
     
 def generateRE(entity_type, entity):
     re = ""
-    query = "SELECT id, entity_type, value_type, value FROM entity_fact WHERE entity = '%s' ORDER BY number_of_selection DESC LIMIT 1" % (entity)
+    query = "SELECT id, entity_type, value_type, value FROM entity_fact WHERE entity = '%s' and value_type = 'alias'" % (entity)
+    re = entityFactRetrieval(query)
+    if re == "":
+        query = "SELECT id, entity_type, value_type, value FROM entity_fact WHERE entity = '%s' ORDER BY number_of_selection DESC LIMIT 1" % (entity)
     re = entityFactRetrieval(query)
     if re == "":
         return entity_type + " tersebut"

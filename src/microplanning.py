@@ -99,9 +99,9 @@ def aggregateSimilarSentences(contents):
                 else:
                     contents[idx]["template"] = ", sedangkan " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
                 if (contents[i]["location"] == contents[idx]["location"]):
-                    contents[idx]["template"] = contents[idx]["template"].replace("di {{location}},", "")
-                    contents[idx]["template"] = contents[idx]["template"].replace("di {{location}}", "")
-                aggregated = True
+                    contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}}", "")
+                    contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}},", "")
+                    aggregated = True
             else:
                 aggregated = False
             idx = i
@@ -209,7 +209,7 @@ def mergeGroups(documentPlan, deprecatedContents):
         for j in range(0, len(documentPlan)):
             if i != j and j not in appendedContents:
                 for content in documentPlan[j]:
-                    if documentPlan[i][0]["entity_type"] == content["entity_type"] and (documentPlan[i][0]["location"] == content["location"] or documentPlan[i][0]["value_type"] == content["value_type"]):
+                    if documentPlan[i][0]["entity_type"] == content["entity_type"] and (documentPlan[i][0]["location_type"] == content["location_type"] or documentPlan[i][0]["value_type"] == content["value_type"]):
                         if (i < j):
                             newGroup.append((i,j))
                         else:

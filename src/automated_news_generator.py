@@ -11,7 +11,6 @@ from input_handler import readQuery
 from realisation import realisation
 from datetime import datetime
 import json
-#from microplanning import lexicalisation
 
 def main():
     article = automatedNewsGeneration()

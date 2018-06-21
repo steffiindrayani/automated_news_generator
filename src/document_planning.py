@@ -15,20 +15,27 @@ from operator import itemgetter
 summarizationConfig = "../data/summarizationconfigforpilkada"
 value_type_groups = "../data/value_type_groups.json"
 
+
 def documentPlanning(query, request):
-    print("determining content...")
+    #print("determining content...")
     contents = contentDetermination(query, request)
-    print("structuring document...")
+    #print("structuring document...")
     documentPlan = documentStructuring(contents, request)
+    for contents in documentPlan:
+        for content in contents:
+            content["value"] = str(content["value"])
     return documentPlan
 
 def contentDetermination(query,request):
     #Retrieve data based on query
     contents = dataRetrieval(query)
+    print("panjang konten", len(contents))
     derivedContents = generateDerivedContents(request)
+    print("panjang konten turunan", len(derivedContents))
     contents.extend(derivedContents)
     if request["calon"] == "":
         contents = dataRankSummarization(contents)
+    print("panjang konten total", len(contents))
     return contents
     
 def documentStructuring(contents, request):
@@ -52,11 +59,12 @@ def generateDerivedContents(request):
     return derivedContents
     
 def dataRankSummarization(contents):
-    value_types = ["Persentase Suara", "Jumlah Suara"]
+    value_types = ["Persentase Suara", "Jumlah Suara", "Total Kemenangan", "Jumlah Kemenangan Tingkat Gubernur", "Jumlah Kemenangan Tingkat Walikota", "Jumlah Kemenangan Tingkat Bupati"]
     for value_type in value_types:
         content = [item for item in contents if item["value_type"] == value_type]
         contents = [item for item in contents if item not in content]
         location = ""
+        content = sorted(content, key=itemgetter('location', 'value'), reverse=True)
         for item in content:
             if item["location"] != location:
                 location = item["location"]
@@ -87,7 +95,7 @@ def generateSummarizationQuery(rule, request):
         operands = operation[0::2]
         operands = [x.lower() for x in operands if not x.isnumeric()]
         #generate query
-        query = "SELECT table0.entity_type, table0.entity, table0.location_type, table0.location, table0.value_type, round(%s,0) as value, table0.event_type, table0.event FROM" % (rule["operation"].lower().replace(" ", ""))
+        query = "SELECT table0.entity_type, table0.entity, table0.location_type, table0.location, table0.value_type, round(%s,2) as value, table0.event_type, table0.event FROM" % (rule["operation"].lower().replace(" ", ""))
         i = 0 
         for operand in operands:
             if i > 0:
@@ -102,6 +110,7 @@ def generateSummarizationQuery(rule, request):
         for idx in range(i):
             if idx > 0:
                 query += " AND table" + str(idx - 1) + ".location = table" + str(idx) + ".location"
+        query += " AND (table0.entity = table1.entity OR table1.entity_type = 'pemilih')"        
         query += " ORDER BY location, value desc"
         return query
 

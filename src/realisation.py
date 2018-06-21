@@ -24,31 +24,30 @@ def linguisticRealisation(textSpecification):
             if (contents[i]["id_template"] != 0):
                 #generation
                 sentence = re.sub(' +',' ', contents[i]["template"])
-                sentence = sentence.replace("{{location_type}}", contents[i]['location_type'])
-                sentence = sentence.replace("{{location}}", contents[i]['location'])
-                sentence = sentence.replace("{{event}}", contents[i]['event'])
-                
-                if "rank" in contents[i]:
-                    sentence = sentence.replace("{{rank}}", generateRank(contents[i]['rank']))
+                for key, value in contents[i].items():
+                    if key == "rank":
+                        sentence = sentence.replace("{{rank}}", generateRank(value))
+                    elif key == "entity":
+                        if "REG" in contents[i]:
+                            if (contents[i]["REG"] == "True"):
+                                r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
+                                r2 = re.compile(re.escape("calon"), re.IGNORECASE)
+                                r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
+                                sentence = r1.sub('', sentence)
+                                sentence = r2.sub('', sentence)
+                                sentence = r3.sub('', sentence)
+                                sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], value, alias=False))
+                            else:
+                                sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], value, alias=True))
+                        else:
+                            sentence = sentence.replace("{{entity}}", contents[i]['entity'])
+                    else:
+                        sentence = sentence.replace("{{" + key + "}}", value)                
                 
                 if i + 1 < len(contents):            
                     sentence = sentence.replace("{{value1}}", generateValue(contents[i+1]['value']))
                     sentence = sentence.replace("{{value2}}", generateValue(contents[i+1]['value']))
-                sentence = sentence.replace("{{value}}", generateValue(contents[i]['value']))
-
-                if "REG" in contents[i]:
-                    if (contents[i]["REG"] == "True"):
-                        r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
-                        r2 = re.compile(re.escape("calon"), re.IGNORECASE)
-                        r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
-                        sentence = r1.sub('', sentence)
-                        sentence = r2.sub('', sentence)
-                        sentence = r3.sub('', sentence)
-                        sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], contents[i]["entity"], alias=False))
-                    else:
-                        sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], contents[i]["entity"], alias=True))
-                else:
-                    sentence = sentence.replace("{{entity}}", contents[i]['entity'])        
+      
                 #validation
                 if sentence.endswith(".") == False and "aggregated" not in contents[i]:
                     sentence += '.'
@@ -72,7 +71,6 @@ def generateValue(value):
     if isinstance(value, float) or "." in value:
         value = float(value)
         value = locale.format("%.*f", (2, value), True)
-        print("here")
     elif value.isnumeric():
         value = int(value)
         value = locale.format("%.*f", (0, value), True)  

@@ -25,14 +25,15 @@ def linguisticRealisation(textSpecification):
                 #generation
                 sentence = re.sub(' +',' ', contents[i]["template"])
                 for key, value in contents[i].items():
-                    if key == "rank":
+                    if key == "rank" and value is not None:
                         sentence = sentence.replace("{{rank}}", generateRank(value))
-                    elif key == "entity":
+                    elif key == "entity" and value is not None:
                         if "REG" in contents[i]:
                             if (contents[i]["REG"] == "True"):
                                 r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
                                 r2 = re.compile(re.escape("calon"), re.IGNORECASE)
                                 r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
+                                r3 = re.compile(re.escape("film"), re.IGNORECASE)
                                 sentence = r1.sub('', sentence)
                                 sentence = r2.sub('', sentence)
                                 sentence = r3.sub('', sentence)
@@ -42,7 +43,8 @@ def linguisticRealisation(textSpecification):
                         else:
                             sentence = sentence.replace("{{entity}}", contents[i]['entity'])
                     else:
-                        sentence = sentence.replace("{{" + key + "}}", value)                
+                        if value is not None:
+                            sentence = sentence.replace("{{" + key + "}}", str(value))                
                 
                 if i + 1 < len(contents):            
                     sentence = sentence.replace("{{value1}}", generateValue(contents[i+1]['value']))
@@ -68,9 +70,9 @@ def structureRealisation(textSpecification):
                 
 def generateValue(value):    
     locale.setlocale(locale.LC_NUMERIC, 'IND')
-    if isinstance(value, float) or "." in value:
-        value = float(value)
-        value = locale.format("%.*f", (2, value), True)
+    if isinstance(value, float):
+        value = int(value)
+        value = locale.format("%.*f", (0, value), True)  
     elif value.isnumeric():
         value = int(value)
         value = locale.format("%.*f", (0, value), True)  

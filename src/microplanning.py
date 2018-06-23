@@ -36,11 +36,11 @@ def lexicalisation(documentPlan, request):
                 data["id_template"] = id_template
                 data["template"] = template
             else:
-                template,couple = getTemplate(data, request["lokasi"], couple)
+                template,couple = getTemplate(data, request["location"], couple)
                 data["id_template"] = template["id"]
                 data["template"] = template["template"]
                 template["prevlocation"] = data["location"]
-                #template["preventity"] = data["entity"]
+                template["value"] = data["value"]
                 existingTemplates.append(template)
     # temp = set()
     # for contents in documentPlan:
@@ -90,7 +90,6 @@ def aggregation(documentPlan):
         deprecatedContents = []
         for i in range(0, len(documentPlan)):
             if not isValidContents(documentPlan[i]):
-                print("here")
                 deprecatedContents.append(i)
         if len(deprecatedContents) > 0:
             documentPlan = mergeGroups1(documentPlan, deprecatedContents)
@@ -118,12 +117,15 @@ def aggregateSimilarSentences(contents):
         if contents[i]["id_template"] != 0:
             if contents[i]["id_template"] == contents[idx]["id_template"]:
                 #remove tanda titik dan perkecil kata kedua, konjungsi random, cek pernah gak
-                contents[i]["template"] = contents[i]["template"].rstrip('.')
                 contents[i]["aggregated"] = 'True' 
+                if (contents[i]["value"] == contents[idx]["value"]):
+                    contents[i]["template"] = contents[i]["template"].replace("{{value}},", "")
+                    contents[i]["template"] = contents[i]["template"].replace("{{value}}", "")
+                contents[i]["template"] = contents[i]["template"].rstrip('.').rsplit("}",1)[0] + "}"
                 if aggregated:
-                    contents[idx]["template"] = ", " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
+                    contents[idx]["template"] = ", {" + contents[idx]["template"].split("{", 1)[1].rsplit("}",1)[0] + "}"
                 else:
-                    contents[idx]["template"] = ", sedangkan " + contents[idx]["template"][:1].lower() + contents[idx]["template"][1:] 
+                    contents[idx]["template"] = " dan {" + contents[idx]["template"].split("{", 1)[1] 
                 if (contents[i]["location"] == contents[idx]["location"]):
                     contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}},", "")
                     contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}}", "")
@@ -163,13 +165,21 @@ def aggregateSimilarSentences(contents):
 #     return id_template, template, couple
 
 def getTemplate(data, lokasi, id_couple):
-    entity_type = data['entity_type'].lower()
+    if data["entity_type"] is None:
+        entity_type = ""
+    else:
+        entity_type = data['entity_type'].lower()
+    if data["location"] is None:
+        location = ""
+    else:
+        location = data['location'].lower()
     value_type = data['value_type'].lower()
-    location = data['location'].lower()
     template = ""
     couple = 0
-    query = "SELECT id,template, entity_type, value_type, couple, location, rank FROM template WHERE entity_type='%s' AND value_type='%s'" % (entity_type, value_type)
-    if location == lokasi.lower():
+    query = "SELECT id,template, entity_type, value_type, couple, location, rank FROM template WHERE value_type='%s'" % (value_type)
+    if entity_type != "":
+        query += " AND entity_type='%s'" % (entity_type)
+    if location == lokasi.lower() and location != "":
         query += " AND (location = 'lokasi' OR location IS NULL)"
     else:
         query += " AND location IS NULL"
@@ -188,6 +198,7 @@ def getTemplate(data, lokasi, id_couple):
     
     query += " ORDER BY number_of_selection LIMIT 1"
     if not template:
+        print(query)
         template = templateRetrieval(query)
         if "couple" in template:
             couple = template["couple"]
@@ -195,7 +206,19 @@ def getTemplate(data, lokasi, id_couple):
 
 def searchExistingTemplate(data, existingTemplates, couple):
     for template in existingTemplates:
-        if template["value_type"].lower() == data["value_type"].lower() and template["entity_type"].lower() == data["entity_type"].lower() and template["prevlocation"] == data["location"] and ("rank" not in data or template["rank"] is None or template["rank"] == data["rank"]):
+        conditionList = ["entity_type", "value_type"]
+        condition = True
+        for cond in conditionList:
+            if cond == "rank":
+                if "rank" in data and template["rank"] is not None and template["rank"] != data["rank"]:
+                    condition = False
+            elif cond == "location":
+                if template["prevlocation"] != data["location"]:
+                    condition = False
+            else:
+                if template[cond].lower() != data[cond].lower():
+                    condition = False
+        if condition:
             if couple == 0:
                 couple = template["couple"]
             else:

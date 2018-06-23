@@ -9,6 +9,7 @@ import MySQLdb
 import json
 
 dbname = "automated_news_generator"
+queryfile = "../data/query"
 
 
 def connectDB(dbName):
@@ -42,59 +43,56 @@ def dataRetrieval(query):
     return contents
     
 def readQuery():
-    calon = ""
-    print("Pembangkit Berita Pemilihan Kepala Daerah di Indonesia")
-    tahun = input("Tahun: ")
-    fokus = input("Fokus (Pemilih/Partai/Pasangan Calon): ")
-    tingkat = input("Tingkat (Walikota/Bupati/Gubernur/Presiden): ")
-    daerah = input("Nama Daerah: ")
-    putaran = input("Putaran: ")
-    if fokus == "Pasangan Calon":
-        calon = input("Pasangan Calon: ")
-    lokasi = input("Lokasi Pencoblosan: ")
-    value_type = input("Informasi: ")
-    event = "Pemilihan " + tingkat + " " + daerah + " " + tahun + " Putaran " + putaran
-
+    event = ""
+    entity = ""
+    entity_type = ""
+    location = ""
+    userquery = readTextFile(queryfile)
+    userquery = compile(userquery, 'sumstring', 'exec')
+    q = locals()
+    exec(userquery)
     request = dict()
-    loc = ""
-    if lokasi != "":
-        loc = lokasi
-    else:
-        loc = daerah
-    value_type = [x.strip() for x in value_type.split(',')]
-    request["loc"] = loc
-    request["event"] = event
-    request["fokus"] = fokus
-    request["daerah"] = daerah
-    request["calon"] = calon
-    request["lokasi"] = lokasi
-    request["value_type"] = value_type
+    q["value_type"] = [x.strip() for x in q["value_type"].split(',')]
+    request["event"] = q["event"]
+    request["entity_type"] = q["entity_type"]
+    request["entity"] = q["entity"]
+    request["location"] = q["location"]
+    request["value_type"] = q["value_type"]
 
-    query = "SELECT * FROM input_data WHERE event = '%s'" % (event)
-    if fokus != "":
-        if fokus == "Pasangan Calon":
-            query += " AND (entity_type='pemilih' OR entity_type='%s')" % (fokus)
-        else:
-            query += " AND entity_type='%s'" % (fokus)
-        
-    if calon != "":
-        query += " AND (entity='%s' OR entity_type ='pemilih')" % (calon)        
-
-    query += " AND (location='%s'" % (loc)
-    query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (loc)
-    
-    query += " AND ("
-    for i in range(0, len(value_type)):
+    query = "SELECT * FROM input_data WHERE ("
+    for i in range(0, len(q["value_type"])):
         if i != 0:
             query += " OR"
-        query += " value_type = '%s'" % (value_type[i]) 
+        query += " value_type = '%s'" % (q["value_type"][i]) 
     query += ")"
+    if q["entity_type"] != "":
+        if q["entity_type"] == "Pasangan Calon":
+            query += " AND (entity_type='pemilih' OR entity_type='%s')" % (q["entity_type"])
+            if q["entity"] != "":
+                query += " AND (entity='%s' OR entity_type ='pemilih')" % (q["entity"])     
+        else:
+            query += " AND entity_type='%s'" % (q["entity_type"])
+            if q["entity"] != "":
+                query += " AND (entity='%s')" % (q["entity"])     
+    if q["location"] != "":  
+        query += " AND (location='%s'" % (q["location"])
+        query += " OR location IN (SELECT location FROM location WHERE super_location='%s'))" % (q["location"])
+    
+    if q["event"] != "":
+        query += " AND event='%s'" % (q["event"])
+
     query += " ORDER BY location, value desc"
+    print(query)
     return query, request
     
 def readJsonFile(filename):
     data = json.load(open(filename))
     return data
+
+def readTextFile(filename):
+    with open(filename) as f:
+        contents = f.read()
+    return contents
 
 def templateRetrieval(query):
     db, cursor = connectDB(dbname)

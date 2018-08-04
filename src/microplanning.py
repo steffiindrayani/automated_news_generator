@@ -121,11 +121,14 @@ def aggregateSimilarSentences(contents):
                 if (contents[i]["value"] == contents[idx]["value"]):
                     contents[i]["template"] = contents[i]["template"].replace("{{value}},", "")
                     contents[i]["template"] = contents[i]["template"].replace("{{value}}", "")
+                    conjunction = "dan"
+                else:
+                    conjunction = "sedangkan"
                 contents[i]["template"] = contents[i]["template"].rstrip('.').rsplit("}",1)[0] + "}"
                 if aggregated:
                     contents[idx]["template"] = ", {" + contents[idx]["template"].split("{", 1)[1].rsplit("}",1)[0] + "}"
                 else:
-                    contents[idx]["template"] = " dan {" + contents[idx]["template"].split("{", 1)[1] 
+                    contents[idx]["template"] = " " + conjunction + " {" + contents[idx]["template"].split("{", 1)[1] 
                 if (contents[i]["location"] == contents[idx]["location"]):
                     contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}},", "")
                     contents[idx]["template"] = contents[idx]["template"].replace(" di {{location}}", "")
@@ -198,7 +201,7 @@ def getTemplate(data, lokasi, id_couple):
     
     query += " ORDER BY number_of_selection LIMIT 1"
     if not template:
-        print(query)
+        # print(query)
         template = templateRetrieval(query)
         if "couple" in template:
             couple = template["couple"]
@@ -206,7 +209,9 @@ def getTemplate(data, lokasi, id_couple):
 
 def searchExistingTemplate(data, existingTemplates, couple):
     for template in existingTemplates:
-        conditionList = ["entity_type", "value_type"]
+        # conditionList = ["entity_type", "value_type"]
+        conditionList = ["entity_type", "value_type", "location", "rank"]
+        # conditionList = ["value_type", "value"]
         condition = True
         for cond in conditionList:
             if cond == "rank":

@@ -23,8 +23,8 @@ def automatedNewsGeneration():
         print("NEWS CAN'T BE GENERATED DUE TO DATA NOT AVAILABLE")
         return ""
     textSpecification = microplanning(documentPlan, request)
-    with open("../results/dictionary", 'w', encoding="utf-8") as outfile:
-        json.dump(textSpecification, outfile, ensure_ascii=False)
+    # with open("../results/dictionary", 'w', encoding="utf-8") as outfile:
+    #     json.dump(textSpecification, outfile, ensure_ascii=False)
     article = realisation(textSpecification)
     return article
     

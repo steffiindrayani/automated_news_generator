@@ -33,10 +33,11 @@ def linguisticRealisation(textSpecification):
                                 r1 = re.compile(re.escape("pasangan"), re.IGNORECASE)
                                 r2 = re.compile(re.escape("calon"), re.IGNORECASE)
                                 r3 = re.compile(re.escape("paslon"), re.IGNORECASE)
-                                r3 = re.compile(re.escape("film"), re.IGNORECASE)
+                                
                                 sentence = r1.sub('', sentence)
                                 sentence = r2.sub('', sentence)
                                 sentence = r3.sub('', sentence)
+                                sentence = sentence.replace("Film {{entity}}", "{{entity}}")
                                 sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], value, alias=False))
                             else:
                                 sentence = sentence.replace("{{entity}}", generateRE(contents[i]["entity_type"], value, alias=True))
@@ -72,7 +73,9 @@ def generateValue(value):
     locale.setlocale(locale.LC_NUMERIC, 'IND')
     if isinstance(value, float):
         value = int(value)
-        value = locale.format("%.*f", (0, value), True)  
+        value = locale.format("%.*f", (0, value), True) 
+    elif isinstance(value,int): 
+        value = locale.format("%.*f", (0, value), True)
     elif value.isnumeric():
         value = int(value)
         value = locale.format("%.*f", (0, value), True)  

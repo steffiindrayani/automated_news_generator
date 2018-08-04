@@ -82,7 +82,7 @@ def readQuery():
         query += " AND event='%s'" % (q["event"])
 
     query += " ORDER BY location, value desc"
-    print(query)
+    # print(query)
     return query, request
     
 def readJsonFile(filename):

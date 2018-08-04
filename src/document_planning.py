@@ -17,14 +17,14 @@ value_type_groups = "../data/value_type_groups.json"
 
 
 def documentPlanning(query, request):
-    #print("determining content...")
+    print("determining content...")
     contents = contentDetermination(query, request)
-    #print("structuring document...")
+    print("structuring document...")
     documentPlan = documentStructuring(contents, request)
-    print(documentPlan)
-    # for contents in documentPlan:
-    #     for content in contents:
-    #         content["value"] = str(content["value"])
+    # print(documentPlan)
+    for contents in documentPlan:
+        for content in contents:
+            content["value"] = str(content["value"])
     return documentPlan
 
 def contentDetermination(query,request):
@@ -40,8 +40,9 @@ def contentDetermination(query,request):
     return contents
     
 def documentStructuring(structuredContents, request):
-    # factOrderStructuring = ["entity_type", "location_type", "value_type_group", "location", "rank"]
-    factOrderStructuring = ["entity_type", "entity"]
+    factOrderStructuring = ["entity_type", "location_type", "value_type_group", "location", "rank"]
+    # factOrderStructuring = ["value_type", "value"]
+    # factOrderStructuring = ["entity_type", "entity"]
     for fact in factOrderStructuring:
         structuredContents = ordering(structuredContents, request, fact)
     return structuredContents
